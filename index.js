@@ -2,7 +2,7 @@ const mineflayer = require('mineflayer')
 const pvp = require('mineflayer-pvp').plugin
 const Vec3 = require('vec3')
 
-const HOST = 'PVPpracticeO.aternos.me'
+const HOST = 'relinge.falix.pro'
 const PORT = 60322
 const USERNAME = 'CrystalBot_Pro'
 const PASSWORD = 'CrystalBot'
