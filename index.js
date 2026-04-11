@@ -5,10 +5,11 @@ const Vec3 = require('vec3')
 const HOST = 'PVPpracticeO.aternos.me'
 const PORT = 60322
 const USERNAME = 'CrystalBot_Pro'
-const PASSWORD = 'hasboon99'
+const PASSWORD = 'CrystalBot'
 
 let bot
 let loggedIn = false
+let registered = false
 
 function createBot() {
   bot = mineflayer.createBot({
@@ -19,25 +20,38 @@ function createBot() {
 
   bot.loadPlugin(pvp)
 
+  console.log('🤖 Bot starting...')
+
   bot.on('spawn', () => {
-    console.log('🤖 Pro Crystal Bot Spawned')
+    console.log('✅ Spawned')
 
     setTimeout(() => {
       bot.chat(`/login ${PASSWORD}`)
     }, 5000)
 
     combatLoop()
+    autoArmor()
     autoTotem()
   })
 
   // =====================
-  // LOGIN
+  // LOGIN + REGISTER (ONE TIME ONLY)
   // =====================
   bot.on('messagestr', (msg) => {
     const text = msg.toLowerCase()
 
+    // REGISTER ONLY ONCE
+    if (!registered && text.includes('register')) {
+      bot.chat(`/register ${PASSWORD}`)
+      registered = true
+      console.log('📝 Registered once')
+      return
+    }
+
+    // LOGIN SYSTEM
     if (text.includes('login')) {
       bot.chat(`/login ${PASSWORD}`)
+      console.log('🔐 Login sent')
     }
 
     if (text.includes('logged')) {
@@ -47,7 +61,7 @@ function createBot() {
   })
 
   // =====================
-  // MAIN COMBAT LOOP ⚔️
+  // COMBAT SYSTEM ⚔️
   // =====================
   function combatLoop() {
     setInterval(() => {
@@ -59,62 +73,38 @@ function createBot() {
 
       if (!target) return
 
-      // look at head
+      // aim
       bot.lookAt(target.position.offset(0, 1.6, 0), true)
 
-      // attack with sword
+      // attack
       bot.pvp.attack(target)
 
-      // crystal logic
-      placeCrystalNear(target)
+      // crystal break
+      const crystal = bot.nearestEntity(e => e.name === 'end_crystal')
+      if (crystal) bot.attack(crystal)
 
-    }, 700) // faster reaction
+    }, 800)
   }
 
   // =====================
-  // CRYSTAL PLACE 💎
+  // AUTO ARMOR 🛡️
   // =====================
-  function placeCrystalNear(target) {
-    const offsets = [
-      new Vec3(1, 0, 0),
-      new Vec3(-1, 0, 0),
-      new Vec3(0, 0, 1),
-      new Vec3(0, 0, -1)
-    ]
+  function autoArmor() {
+    setInterval(() => {
+      if (!loggedIn) return
 
-    for (const offset of offsets) {
-      const pos = target.position.floored().plus(offset)
+      const helmet = bot.inventory.items().find(i => i.name.includes('helmet'))
+      const chest = bot.inventory.items().find(i => i.name.includes('chestplate'))
+      const legs = bot.inventory.items().find(i => i.name.includes('leggings'))
+      const boots = bot.inventory.items().find(i => i.name.includes('boots'))
 
-      const block = bot.blockAt(pos)
+      if (helmet) bot.equip(helmet, 'head').catch(() => {})
+      if (chest) bot.equip(chest, 'torso').catch(() => {})
+      if (legs) bot.equip(legs, 'legs').catch(() => {})
+      if (boots) bot.equip(boots, 'feet').catch(() => {})
 
-      if (block && (block.name.includes('obsidian') || block.name.includes('bedrock'))) {
-        const above = bot.blockAt(pos.offset(0, 1, 0))
-
-        if (above && above.name === 'air') {
-          const crystal = bot.inventory.items().find(i => i.name.includes('end_crystal'))
-
-          if (crystal) {
-            bot.equip(crystal, 'hand').then(() => {
-              bot.placeBlock(block, new Vec3(0, 1, 0)).catch(() => {})
-            })
-          }
-        }
-      }
-    }
+    }, 3000)
   }
-
-  // =====================
-  // BREAK CRYSTALS 💥
-  // =====================
-  bot.on('physicsTick', () => {
-    if (!loggedIn) return
-
-    const crystal = bot.nearestEntity(e => e.name === 'end_crystal')
-
-    if (crystal) {
-      bot.attack(crystal)
-    }
-  })
 
   // =====================
   // AUTO TOTEM 🛡️
@@ -132,7 +122,7 @@ function createBot() {
   }
 
   // =====================
-  // RECONNECT
+  // RECONNECT 🔁
   // =====================
   bot.on('end', () => {
     console.log('🔄 Reconnecting...')
@@ -141,6 +131,10 @@ function createBot() {
 
   bot.on('error', (err) => {
     console.log('⚠️ Error:', err.message)
+  })
+
+  bot.on('kicked', (reason) => {
+    console.log('❌ Kicked:', reason)
   })
 }
 
