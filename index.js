@@ -2,8 +2,8 @@ const mineflayer = require('mineflayer')
 const pvp = require('mineflayer-pvp').plugin
 const Vec3 = require('vec3')
 
-const HOST = 'relinge.falix.pro'
-const PORT = 20925
+const HOST = 'crystalo.minekeep.gg'
+const PORT = 25565
 const USERNAME = 'CrystalBot_Pro'
 const PASSWORD = 'CrystalBot'
 
