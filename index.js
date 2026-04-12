@@ -2,8 +2,8 @@ const mineflayer = require('mineflayer')
 const pvp = require('mineflayer-pvp').plugin
 const Vec3 = require('vec3')
 
-const HOST = 'crystalo.minekeep.gg'
-const PORT = 25565
+const HOST = 'PVPpracticeO.aternos.me'
+const PORT = 60322
 const USERNAME = 'CrystalBot_Pro'
 const PASSWORD = 'CrystalBot'
 
