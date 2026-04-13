@@ -8,6 +8,8 @@ const movement = require('./movement')
 const combat = require('./combat')
 const antiAfk = require('./antiAfk')
 const leaveRejoin = require('./leaveRejoin')
+
+// 👉 ADD THIS HERE
 const auth = require('./auth')
 
 let bot
