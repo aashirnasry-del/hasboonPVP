@@ -1,3 +1,5 @@
+const { goals } = require('mineflayer-pathfinder')
+
 module.exports = function movement(bot) {
   console.log("🟢 movement loaded")
 
