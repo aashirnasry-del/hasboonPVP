@@ -1,7 +1,5 @@
 module.exports = function leaveRejoin(bot, restart) {
-
-  bot.on('end', () => {
-    setTimeout(restart, 5000)
+  bot.on('kicked', () => {
+    setTimeout(restart, 20000)
   })
-
 }
