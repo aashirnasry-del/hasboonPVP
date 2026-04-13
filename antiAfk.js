@@ -5,13 +5,11 @@ module.exports = function antiAfk(bot) {
     try {
       if (!bot || !bot.entity) return
 
-      const p = bot.nearestEntity(e => e.type === 'player')
-      if (p && p.position) {
-        bot.lookAt(p.position.offset(0, 1.6, 0))
-      }
+      bot.setControlState('jump', true)
+      setTimeout(() => {
+        bot.setControlState('jump', false)
+      }, 300)
 
-    } catch (err) {
-      console.log("antiAfk error:", err.message)
-    }
-  }, 3000)
+    } catch (e) {}
+  }, 8000)
 }
