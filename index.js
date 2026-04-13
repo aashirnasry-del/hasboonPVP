@@ -10,9 +10,9 @@ const USERNAME = 'AutoBot'
 const PASSWORD = '676767'
 
 // =====================
-// 📁 LOAD SAVE DATA
+// 📁 LOAD DATA
 // =====================
-let data = { registered: false }
+let data = { registered: true }
 
 if (fs.existsSync('bot_data.json')) {
   data = JSON.parse(fs.readFileSync('bot_data.json'))
@@ -23,7 +23,7 @@ function saveData() {
 }
 
 // =====================
-// 🚀 START BOT FUNCTION
+// 🚀 START BOT
 // =====================
 function createBot() {
   const bot = mineflayer.createBot({
@@ -34,20 +34,19 @@ function createBot() {
   })
 
   // =====================
-  // ✅ WHEN BOT JOINS
+  // ✅ SPAWN
   // =====================
   bot.on('spawn', () => {
-    console.log("✅ Bot joined server!")
+    console.log("✅ Bot joined!")
 
-    // 🔑 Force login after delay
     setTimeout(() => {
       bot.chat(`/login ${PASSWORD}`)
     }, 3000)
 
-    // 🔁 Systems loop
     setInterval(() => {
       autoEquipArmor(bot)
       autoTotem(bot)
+      autoGapple(bot)
     }, 1000)
   })
 
@@ -55,39 +54,37 @@ function createBot() {
   // 🔐 REGISTER + LOGIN
   // =====================
   bot.on('messagestr', (msg) => {
-    const message = msg.toLowerCase()
+    const m = msg.toLowerCase()
 
-    // ✅ REGISTER ONLY ONCE
-    if (message.includes('register') && !data.registered) {
+    if (m.includes('register') && !data.registered) {
       bot.chat(`/register ${PASSWORD} ${PASSWORD}`)
       data.registered = true
       saveData()
-      console.log("📝 Registered (saved)")
+      console.log("📝 Registered")
     }
 
-    // 🔑 ALWAYS LOGIN
-    if (message.includes('login')) {
+    if (m.includes('login')) {
       bot.chat(`/login ${PASSWORD}`)
       console.log("🔓 Logged in")
     }
   })
 
   // =====================
-  // 🛡️ AUTO ARMOR
+  // 🛡️ ARMOR
   // =====================
   function autoEquipArmor(bot) {
     const armorSlots = {
-      head: ['netherite_helmet', 'diamond_helmet', 'iron_helmet'],
-      torso: ['netherite_chestplate', 'diamond_chestplate', 'iron_chestplate'],
-      legs: ['netherite_leggings', 'diamond_leggings', 'iron_leggings'],
-      feet: ['netherite_boots', 'diamond_boots', 'iron_boots']
+      head: ['netherite_helmet','diamond_helmet'],
+      torso: ['netherite_chestplate','diamond_chestplate'],
+      legs: ['netherite_leggings','diamond_leggings'],
+      feet: ['netherite_boots','diamond_boots']
     }
 
     for (let slot in armorSlots) {
-      for (let itemName of armorSlots[slot]) {
-        const item = bot.inventory.items().find(i => i.name === itemName)
+      for (let name of armorSlots[slot]) {
+        const item = bot.inventory.items().find(i => i.name === name)
         if (item) {
-          bot.equip(item, slot).catch(() => {})
+          bot.equip(item, slot).catch(()=>{})
           break
         }
       }
@@ -95,42 +92,76 @@ function createBot() {
   }
 
   // =====================
-  // 💚 AUTO TOTEM
+  // 💚 TOTEM
   // =====================
   function autoTotem(bot) {
-    const offhandSlot = bot.getEquipmentDestSlot('off-hand')
-    const currentItem = bot.inventory.slots[offhandSlot]
+    const off = bot.getEquipmentDestSlot('off-hand')
+    const current = bot.inventory.slots[off]
 
-    if (!currentItem || currentItem.name !== 'totem_of_undying') {
+    if (!current || current.name !== 'totem_of_undying') {
       const totem = bot.inventory.items().find(i => i.name === 'totem_of_undying')
-      if (totem) {
-        bot.equip(totem, 'off-hand').catch(() => {})
-        console.log("💚 Totem equipped")
+      if (totem) bot.equip(totem, 'off-hand').catch(()=>{})
+    }
+  }
+
+  // =====================
+  // 🍎 AUTO GAPPLE
+  // =====================
+  function autoGapple(bot) {
+    if (bot.health <= 12) { // low HP
+      const gapple = bot.inventory.items().find(i =>
+        i.name === 'golden_apple' || i.name === 'enchanted_golden_apple'
+      )
+
+      if (gapple) {
+        bot.equip(gapple, 'hand').then(() => {
+          bot.activateItem()
+          console.log("🍎 Eating gapple")
+        }).catch(()=>{})
       }
     }
   }
 
   // =====================
+  // 🏃 MOVE WHEN HIT
+  // =====================
+  bot.on('entityHurt', (entity) => {
+    if (entity === bot.entity) {
+      console.log("⚡ Got hit! Moving...")
+
+      bot.setControlState('forward', true)
+      bot.setControlState('jump', true)
+
+      setTimeout(() => {
+        bot.clearControlStates()
+      }, 1000)
+    }
+  })
+
+  // =====================
+  // 🧱 BLOCK BREAK UNDER
+  // =====================
+  bot.on('physicsTick', () => {
+    const below = bot.blockAt(bot.entity.position.offset(0, -1, 0))
+
+    if (!below || below.type === 0) {
+      // air under = falling
+      bot.setControlState('jump', true)
+      bot.setControlState('forward', true)
+    }
+  })
+
+  // =====================
   // ❌ ERROR + RECONNECT
   // =====================
-  bot.on('kicked', (reason) => {
-    console.log("❌ Kicked:", reason)
-  })
-
-  bot.on('error', (err) => {
-    console.log("❌ Error:", err)
-  })
+  bot.on('kicked', console.log)
+  bot.on('error', console.log)
 
   bot.on('end', () => {
-    console.log("⚠️ Disconnected! Reconnecting in 5s...")
-
-    setTimeout(() => {
-      createBot()
-    }, 5000)
+    console.log("🔄 Reconnecting in 5s...")
+    setTimeout(createBot, 5000)
   })
 }
 
-// =====================
-// ▶️ START BOT
-// =====================
+// ▶️ START
 createBot()
