@@ -2,7 +2,7 @@ const mineflayer = require('mineflayer')
 const fs = require('fs')
 
 // =====================
-// CONFIG (YOUR SERVER)
+// CONFIG
 // =====================
 const HOST = 'PVPpracticeO.aternos.me'
 const PORT = 60322
@@ -10,7 +10,7 @@ const USERNAME = 'AutoBot'
 const PASSWORD = '676767'
 
 // =====================
-// REGISTER SAVE
+// REGISTER DATA
 // =====================
 let data = { registered: false }
 
@@ -23,7 +23,7 @@ function saveData() {
 }
 
 // =====================
-// START BOT
+// BOT START
 // =====================
 function startBot() {
   const bot = mineflayer.createBot({
@@ -34,16 +34,24 @@ function startBot() {
   })
 
   // =====================
+  // STATE SYSTEM (IMPORTANT FIX)
+  // =====================
+  let state = {
+    move: 'forward',
+    reacting: false
+  }
+
+  // =====================
   // SPAWN
   // =====================
   bot.on('spawn', () => {
-    console.log("🧠 Bot joined server")
+    console.log("🧠 Bot online")
 
     setTimeout(() => {
       bot.chat(`/login ${PASSWORD}`)
     }, 3000)
 
-    startProMovement(bot)
+    movementBrain(bot, state)
 
     setInterval(() => {
       autoArmor(bot)
@@ -63,84 +71,82 @@ function startBot() {
       bot.chat(`/register ${PASSWORD} ${PASSWORD}`)
       data.registered = true
       saveData()
-      console.log("📝 Registered once")
     }
 
-    if (m.includes('login') || m.includes('l ')) {
+    if (m.includes('login')) {
       bot.chat(`/login ${PASSWORD}`)
     }
   })
 
   // =====================
-  // 🧠 PRO MOVEMENT AI
+  // 🧠 SINGLE MOVEMENT BRAIN (NO FREEZE FIX)
   // =====================
-  function startProMovement(bot) {
+  function movementBrain(bot, state) {
     const moves = ['forward', 'back', 'left', 'right']
 
     setInterval(() => {
+      if (!bot.entity) return
+
       bot.clearControlStates()
 
-      const move = moves[Math.floor(Math.random() * moves.length)]
-      bot.setControlState(move, true)
-
-      if (Math.random() < 0.3) {
+      // if reacting → stronger escape movement
+      if (state.reacting) {
+        bot.setControlState(state.move, true)
         bot.setControlState('jump', true)
+        return
       }
 
+      // normal movement
+      state.move = moves[Math.floor(Math.random() * moves.length)]
+
+      bot.setControlState(state.move, true)
+
+      if (Math.random() < 0.3) bot.setControlState('jump', true)
+
       bot.look(
-        bot.entity.yaw + (Math.random() - 0.5) * 0.6,
+        bot.entity.yaw + (Math.random() - 0.5) * 0.4,
         bot.entity.pitch,
         true
       )
-    }, 1100)
+    }, 900)
   }
 
   // =====================
-  // ⚡ DODGE WHEN HIT
+  // ⚡ HIT DODGE (NO FREEZE FIX)
   // =====================
-  let reacting = false
-
   bot.on('entityHurt', (entity) => {
-    if (entity !== bot.entity || reacting) return
+    if (entity !== bot.entity) return
+    if (state.reacting) return
 
-    reacting = true
+    state.reacting = true
 
     const attacker = bot.nearestEntity(e =>
       e.type === 'player' &&
       e.position.distanceTo(bot.entity.position) < 6
     )
 
-    bot.clearControlStates()
-
     if (attacker) {
       const dx = bot.entity.position.x - attacker.position.x
       const dz = bot.entity.position.z - attacker.position.z
 
-      const move = Math.abs(dx) > Math.abs(dz)
-        ? (dx > 0 ? 'right' : 'left')
-        : (dz > 0 ? 'back' : 'forward')
-
-      bot.setControlState(move, true)
+      state.move =
+        Math.abs(dx) > Math.abs(dz)
+          ? (dx > 0 ? 'right' : 'left')
+          : (dz > 0 ? 'back' : 'forward')
     }
 
     setTimeout(() => {
-      bot.setControlState('jump', true)
-    }, 100)
-
-    setTimeout(() => {
-      bot.clearControlStates()
-      reacting = false
-    }, 700)
+      state.reacting = false
+    }, 800)
   })
 
   // =====================
-  // 👀 LOOK AT PLAYERS
+  // 👀 LOOK
   // =====================
   function lookAtPlayers(bot) {
-    const target = bot.nearestEntity(e => e.type === 'player')
-
-    if (target && bot.entity) {
-      bot.lookAt(target.position.offset(0, 1.6, 0))
+    const t = bot.nearestEntity(e => e.type === 'player')
+    if (t && bot.entity) {
+      bot.lookAt(t.position.offset(0, 1.6, 0))
     }
   }
 
@@ -157,9 +163,9 @@ function startBot() {
 
     for (let slot in armor) {
       for (let item of armor[slot]) {
-        const found = bot.inventory.items().find(i => i.name === item)
-        if (found) {
-          bot.equip(found, slot).catch(() => {})
+        const f = bot.inventory.items().find(i => i.name === item)
+        if (f) {
+          bot.equip(f, slot).catch(()=>{})
           break
         }
       }
@@ -171,11 +177,11 @@ function startBot() {
   // =====================
   function autoTotem(bot) {
     const off = bot.getEquipmentDestSlot('off-hand')
-    const current = bot.inventory.slots[off]
+    const cur = bot.inventory.slots[off]
 
-    if (!current || current.name !== 'totem_of_undying') {
-      const totem = bot.inventory.items().find(i => i.name === 'totem_of_undying')
-      if (totem) bot.equip(totem, 'off-hand').catch(() => {})
+    if (!cur || cur.name !== 'totem_of_undying') {
+      const t = bot.inventory.items().find(i => i.name === 'totem_of_undying')
+      if (t) bot.equip(t, 'off-hand').catch(()=>{})
     }
   }
 
@@ -184,14 +190,12 @@ function startBot() {
   // =====================
   function autoGapple(bot) {
     if (bot.health <= 12) {
-      const item = bot.inventory.items().find(i =>
+      const g = bot.inventory.items().find(i =>
         i.name === 'golden_apple' || i.name === 'enchanted_golden_apple'
       )
 
-      if (item) {
-        bot.equip(item, 'hand').then(() => {
-          bot.activateItem()
-        }).catch(() => {})
+      if (g) {
+        bot.equip(g, 'hand').then(() => bot.activateItem()).catch(()=>{})
       }
     }
   }
@@ -203,10 +207,9 @@ function startBot() {
   bot.on('error', console.log)
 
   bot.on('end', () => {
-    console.log("🔄 Reconnecting in 5s...")
+    console.log("🔄 Reconnecting...")
     setTimeout(startBot, 5000)
   })
 }
 
-// START
 startBot()
