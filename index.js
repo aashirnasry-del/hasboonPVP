@@ -159,27 +159,6 @@ function startBot() {
   }
 
   // =====================
-  // ⚡ MOVE WHEN HIT (REAL FIX)
-  // =====================
-  let reacting = true
-
-  bot.on('entityHurt', (entity) => {
-    if (entity === bot.entity && !reacting) {
-      reacting = true
-      console.log("⚡ Hit detected → reacting")
-
-      bot.setControlState('jump', true)
-      bot.setControlState('forward', true)
-      bot.setControlState('left', true)
-
-      setTimeout(() => {
-        bot.clearControlStates()
-        reacting = false
-      }, 1500)
-    }
-  })
-
-  // =====================
   // 🧱 FALL / BLOCK UNDER CHECK
   // =====================
   bot.on('physicsTick', () => {
