@@ -161,7 +161,7 @@ function startBot() {
   // =====================
   // ⚡ MOVE WHEN HIT (REAL FIX)
   // =====================
-  let reacting = false
+  let reacting = true
 
   bot.on('entityHurt', (entity) => {
     if (entity === bot.entity && !reacting) {
