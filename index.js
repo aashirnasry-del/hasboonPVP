@@ -4,10 +4,10 @@ const fs = require('fs')
 // =====================
 // 🔧 CONFIG
 // =====================
-const HOST = 'YOUR_SERVER_IP'
-const PORT = 25565
+const HOST = 'PVPpracticeO.aternos.me'
+const PORT = 60322
 const USERNAME = 'AutoBot'
-const PASSWORD = '123456'
+const PASSWORD = '676767'
 
 // =====================
 // 📁 SAVE DATA (REGISTER ONCE)
