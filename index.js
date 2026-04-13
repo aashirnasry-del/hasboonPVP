@@ -5,7 +5,7 @@ const fs = require('fs')
 
 const HOST = 'PVPpracticeO.aternos.me'
 const PORT = 60322
-const USERNAME = 'StableBot'
+const USERNAME = 'AutoBot'
 const PASSWORD = '676767'
 
 // =====================
