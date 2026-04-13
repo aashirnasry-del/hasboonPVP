@@ -1,23 +1,26 @@
 const { goals } = require('mineflayer-pathfinder')
 
 module.exports = function movement(bot) {
+  console.log("🟢 movement loaded")
 
   setInterval(() => {
-    if (!bot.entity) return
+    try {
+      if (!bot || !bot.entity) return
+      if (!bot.pathfinder) return
 
-    const player = bot.nearestEntity(e =>
-      e.type === 'player' &&
-      e.position.distanceTo(bot.entity.position) < 20
-    )
+      const player = bot.nearestEntity(e =>
+        e.type === 'player'
+      )
 
-    if (player) {
-      bot.pathfinder.setGoal(new goals.GoalFollow(player, 2), true)
-    } else {
-      const x = bot.entity.position.x + (Math.random() * 10 - 5)
-      const z = bot.entity.position.z + (Math.random() * 10 - 5)
+      if (player && player.position) {
+        bot.pathfinder.setGoal(
+          new goals.GoalFollow(player, 2),
+          true
+        )
+      }
 
-      bot.pathfinder.setGoal(new goals.GoalXZ(x, z))
+    } catch (err) {
+      console.log("movement error:", err.message)
     }
-
-  }, 3000)
+  }, 4000)
 }
