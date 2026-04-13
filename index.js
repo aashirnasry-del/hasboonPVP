@@ -11,9 +11,9 @@ const auth = require('./auth')
 const leaveRejoin = require('./leaveRejoin')
 
 let bot
+let restarting = false
 
 function startBot() {
-
   try {
     bot = mineflayer.createBot({
       host: config.server.ip,
@@ -31,14 +31,12 @@ function startBot() {
       const moves = new Movements(bot, mcData)
       bot.pathfinder.setMovements(moves)
 
-      // AUTH
       auth(bot)
 
       setTimeout(() => {
         bot.chat(`/login ${config.bot.password}`)
-      }, 3000)
+      }, 6000)
 
-      // MODULES
       movement(bot)
       combat(bot)
       antiAfk(bot)
@@ -47,20 +45,29 @@ function startBot() {
     })
 
     bot.on('end', () => {
-      console.log("🔄 reconnecting...")
-      setTimeout(startBot, 5000)
+      console.log("🔄 disconnected")
+
+      if (restarting) return
+      restarting = true
+
+      setTimeout(() => {
+        restarting = false
+        startBot()
+      }, 20000) // IMPORTANT: prevents throttle kick
     })
 
-    bot.on('error', err => {
-      console.log("❌ ERROR:", err.message)
-    })
-
-    bot.on('kicked', reason => {
+    bot.on('kicked', (reason) => {
       console.log("❌ KICKED:", reason)
+    })
+
+    bot.on('error', (err) => {
+      console.log("❌ ERROR:", err.message)
     })
 
   } catch (err) {
     console.log("❌ CRASH:", err.message)
+
+    setTimeout(startBot, 20000)
   }
 }
 
