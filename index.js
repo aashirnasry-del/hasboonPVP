@@ -1,8 +1,10 @@
 const mineflayer = require('mineflayer')
+const { pathfinder, Movements, goals } = require('mineflayer-pathfinder')
+const minecraftData = require('minecraft-data')
 const fs = require('fs')
 
 // =====================
-// CONFIG
+// SERVER CONFIG
 // =====================
 const HOST = 'PVPpracticeO.aternos.me'
 const PORT = 60322
@@ -10,7 +12,7 @@ const USERNAME = 'AutoBot'
 const PASSWORD = '676767'
 
 // =====================
-// REGISTER DATA
+// DATA SAVE
 // =====================
 let data = { registered: false }
 
@@ -23,7 +25,7 @@ function saveData() {
 }
 
 // =====================
-// BOT START
+// START BOT
 // =====================
 function startBot() {
   const bot = mineflayer.createBot({
@@ -33,32 +35,27 @@ function startBot() {
     version: false
   })
 
-  // =====================
-  // STATE SYSTEM (IMPORTANT FIX)
-  // =====================
-  let state = {
-    move: 'forward',
-    reacting: false
-  }
+  bot.loadPlugin(pathfinder)
+
+  let mcData
+  let movements
+  let reacting = false
 
   // =====================
   // SPAWN
   // =====================
   bot.on('spawn', () => {
-    console.log("🧠 Bot online")
+    console.log("🤖 Slobos-style AI online")
+
+    mcData = minecraftData(bot.version)
+    movements = new Movements(bot, mcData)
+    bot.pathfinder.setMovements(movements)
 
     setTimeout(() => {
       bot.chat(`/login ${PASSWORD}`)
     }, 3000)
 
-    movementBrain(bot, state)
-
-    setInterval(() => {
-      autoArmor(bot)
-      autoTotem(bot)
-      autoGapple(bot)
-      lookAtPlayers(bot)
-    }, 1000)
+    brain(bot)
   })
 
   // =====================
@@ -79,46 +76,36 @@ function startBot() {
   })
 
   // =====================
-  // 🧠 SINGLE MOVEMENT BRAIN (NO FREEZE FIX)
+  // 🧠 MAIN AI BRAIN (SLOBOS STYLE)
   // =====================
-  function movementBrain(bot, state) {
-    const moves = ['forward', 'back', 'left', 'right']
-
+  function brain(bot) {
     setInterval(() => {
-      if (!bot.entity) return
+      if (!bot.entity || reacting) return
 
-      bot.clearControlStates()
-
-      // if reacting → stronger escape movement
-      if (state.reacting) {
-        bot.setControlState(state.move, true)
-        bot.setControlState('jump', true)
-        return
-      }
-
-      // normal movement
-      state.move = moves[Math.floor(Math.random() * moves.length)]
-
-      bot.setControlState(state.move, true)
-
-      if (Math.random() < 0.3) bot.setControlState('jump', true)
-
-      bot.look(
-        bot.entity.yaw + (Math.random() - 0.5) * 0.4,
-        bot.entity.pitch,
-        true
+      const player = bot.nearestEntity(e =>
+        e.type === 'player' &&
+        e.position.distanceTo(bot.entity.position) < 20
       )
-    }, 900)
+
+      if (player) {
+        // follow smoothly (like PvP practice bots)
+        bot.pathfinder.setGoal(new goals.GoalFollow(player, 2), true)
+      } else {
+        // roam randomly like survival player
+        const x = bot.entity.position.x + (Math.random() * 16 - 8)
+        const z = bot.entity.position.z + (Math.random() * 16 - 8)
+        bot.pathfinder.setGoal(new goals.GoalXZ(x, z))
+      }
+    }, 2500)
   }
 
   // =====================
-  // ⚡ HIT DODGE (NO FREEZE FIX)
+  // ⚡ REALISTIC DODGE SYSTEM
   // =====================
   bot.on('entityHurt', (entity) => {
-    if (entity !== bot.entity) return
-    if (state.reacting) return
+    if (entity !== bot.entity || reacting) return
 
-    state.reacting = true
+    reacting = true
 
     const attacker = bot.nearestEntity(e =>
       e.type === 'player' &&
@@ -129,76 +116,26 @@ function startBot() {
       const dx = bot.entity.position.x - attacker.position.x
       const dz = bot.entity.position.z - attacker.position.z
 
-      state.move =
-        Math.abs(dx) > Math.abs(dz)
-          ? (dx > 0 ? 'right' : 'left')
-          : (dz > 0 ? 'back' : 'forward')
+      const x = bot.entity.position.x + (dx > 0 ? 6 : -6)
+      const z = bot.entity.position.z + (dz > 0 ? 6 : -6)
+
+      bot.pathfinder.setGoal(new goals.GoalXZ(x, z))
     }
 
     setTimeout(() => {
-      state.reacting = false
-    }, 800)
+      reacting = false
+    }, 1200)
   })
 
   // =====================
-  // 👀 LOOK
+  // 👀 LOOK SYSTEM (REALISTIC)
   // =====================
-  function lookAtPlayers(bot) {
-    const t = bot.nearestEntity(e => e.type === 'player')
-    if (t && bot.entity) {
-      bot.lookAt(t.position.offset(0, 1.6, 0))
+  setInterval(() => {
+    const target = bot.nearestEntity(e => e.type === 'player')
+    if (target) {
+      bot.lookAt(target.position.offset(0, 1.6, 0))
     }
-  }
-
-  // =====================
-  // 🛡️ ARMOR
-  // =====================
-  function autoArmor(bot) {
-    const armor = {
-      head: ['netherite_helmet','diamond_helmet','iron_helmet'],
-      torso: ['netherite_chestplate','diamond_chestplate','iron_chestplate'],
-      legs: ['netherite_leggings','diamond_leggings','iron_leggings'],
-      feet: ['netherite_boots','diamond_boots','iron_boots']
-    }
-
-    for (let slot in armor) {
-      for (let item of armor[slot]) {
-        const f = bot.inventory.items().find(i => i.name === item)
-        if (f) {
-          bot.equip(f, slot).catch(()=>{})
-          break
-        }
-      }
-    }
-  }
-
-  // =====================
-  // 💚 TOTEM
-  // =====================
-  function autoTotem(bot) {
-    const off = bot.getEquipmentDestSlot('off-hand')
-    const cur = bot.inventory.slots[off]
-
-    if (!cur || cur.name !== 'totem_of_undying') {
-      const t = bot.inventory.items().find(i => i.name === 'totem_of_undying')
-      if (t) bot.equip(t, 'off-hand').catch(()=>{})
-    }
-  }
-
-  // =====================
-  // 🍎 GAPPLE
-  // =====================
-  function autoGapple(bot) {
-    if (bot.health <= 12) {
-      const g = bot.inventory.items().find(i =>
-        i.name === 'golden_apple' || i.name === 'enchanted_golden_apple'
-      )
-
-      if (g) {
-        bot.equip(g, 'hand').then(() => bot.activateItem()).catch(()=>{})
-      }
-    }
-  }
+  }, 1000)
 
   // =====================
   // ERROR HANDLING
