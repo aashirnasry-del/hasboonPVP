@@ -2,7 +2,7 @@
   "server": {
     "ip": "PVPpracticeO.aternos.me",
     "port": 60322,
-    "version": false
+    "version": true
   },
   "bot": {
     "username": "CoreBot",
