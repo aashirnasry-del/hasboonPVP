@@ -4,14 +4,18 @@ const minecraftData = require('minecraft-data')
 
 const config = require('./settings.json')
 
+// Modules
 const movement = require('./movement')
 const combat = require('./combat')
-const antiAfk = require('./antiAfk')
+const antiAfk = require('./antiAFK')
+const auth = require('./auth')
 const leaveRejoin = require('./leaveRejoin')
 
-const auth = require('./auth')
 let bot
 
+// =====================
+// START BOT FUNCTION
+// =====================
 function startBot() {
   bot = mineflayer.createBot({
     host: config.server.ip,
@@ -22,36 +26,56 @@ function startBot() {
 
   bot.loadPlugin(pathfinder)
 
-  bot.on('spawn', () => {
-  console.log("🟢 Bot started")
+  // =====================
+  // SPAWN EVENT
+  // =====================
+  bot.once('spawn', () => {
+    console.log("🟢 Bot spawned successfully")
 
-  const mcData = minecraftData(bot.version)
-  const moves = new Movements(bot, mcData)
-  bot.pathfinder.setMovements(moves)
+    // Setup pathfinder
+    const mcData = minecraftData(bot.version)
+    const moves = new Movements(bot, mcData)
+    bot.pathfinder.setMovements(moves)
 
-  setTimeout(() => {
-    bot.chat(`/login ${config.bot.password}`)
-  }, 3000)
+    // =====================
+    // AUTH SYSTEM (REGISTER / LOGIN / ARMOR / EAT / TOTEM)
+    // =====================
+    auth(bot, config)
 
-  // 👉 ADD THIS LINE HERE
-  auth(bot, config)
+    // Small delay login (safe servers)
+    setTimeout(() => {
+      bot.chat(`/login ${config.bot.password}`)
+    }, 3000)
 
-  // other modules
-  if (config.modules.movement) movement(bot)
-  if (config.modules.combat) combat(bot)
-  if (config.modules.antiAfk) antiAfk(bot)
+    // =====================
+    // MODULES (ONLY AFTER SPAWN)
+    // =====================
+    movement(bot)
+    combat(bot)
+    antiAfk(bot)
 
-  leaveRejoin(bot, startBot)
-})
+    // Leave/Rejoin system
+    leaveRejoin(bot, startBot)
   })
 
+  // =====================
+  // DISCONNECT HANDLING
+  // =====================
   bot.on('end', () => {
-    console.log("🔄 Reconnecting...")
+    console.log("🔄 Bot disconnected, restarting...")
     setTimeout(startBot, 5000)
   })
 
-  bot.on('error', console.log)
-  bot.on('kicked', console.log)
+  bot.on('kicked', (reason) => {
+    console.log("❌ Kicked:", reason)
+  })
+
+  bot.on('error', (err) => {
+    console.log("❌ Error:", err.message)
+  })
 }
 
+// =====================
+// BOOT BOT
+// =====================
 startBot()
