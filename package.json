@@ -1,13 +1,10 @@
 {
   "name": "minecraft-autobot",
   "version": "1.0.0",
-  "description": "Auto register, login, armor, and totem Minecraft bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "author": "MrGT",
-  "license": "ISC",
   "dependencies": {
     "mineflayer": "^4.20.1"
   }
