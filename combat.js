@@ -1,15 +1,12 @@
 module.exports = function combat(bot) {
-  if (!bot) return
+  console.log("⚔️ combat loaded")
 
-  console.log("⚔️ Combat loaded")
-
-  bot.on('entityHurt', (entity) => {
+  bot.on('entityHurt', () => {
     try {
-      if (entity !== bot.entity) return
+      if (!bot || !bot.entity) return
 
       const attacker = bot.nearestEntity(e =>
-        e.type === 'player' &&
-        e.position.distanceTo(bot.entity.position) < 6
+        e.type === 'player'
       )
 
       if (attacker) {
@@ -17,7 +14,7 @@ module.exports = function combat(bot) {
       }
 
     } catch (err) {
-      console.log("Combat error:", err.message)
+      console.log("combat error:", err.message)
     }
   })
 }
