@@ -12,8 +12,9 @@ module.exports = function movement(bot) {
         e.type === 'player'
       )
 
-      bot.lookAt(player.position.offset(0, 1.6, 0))
-
-    } catch (e) {}
+    } catch (err) {
+      console.log("movement error:", err.message)
+    }
+    
   }, 4000)
 }
