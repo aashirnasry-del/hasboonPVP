@@ -9,16 +9,14 @@ module.exports = function auth(bot, config) {
     const m = msg.toLowerCase()
 
     if (m.includes('register')) {
-      bot.chat(`/register ${config.bot.password} ${config.bot.password}`)
+      bot.chat(`/register ${config.bot.password}`)
     }
 
-    if (m.includes('login')) {
-      setTimeout(() => {
-        bot.chat(`/login ${config.bot.password}`)
-      }, 1500)
-    }
-  })
-
+  bot.once('spawn', () => {
+  setTimeout(() => {
+    bot.chat('/login 676767')
+  }, 5000)
+})
   // =====================
   // AUTO ARMOR EQUIP
   // =====================
