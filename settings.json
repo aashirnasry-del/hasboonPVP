@@ -12,9 +12,5 @@
     "movement": true,
     "combat": true,
     "antiAfk": true
-  },
-  "utils": {
-    "auto-reconnect": true,
-    "auto-reconnect-delay": 3000
   }
 }
