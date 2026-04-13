@@ -1,11 +1,21 @@
 module.exports = function antiAfk(bot) {
+  if (!bot) return
+
+  console.log("💤 AntiAFK loaded")
 
   setInterval(() => {
-    if (!bot.entity) return
+    try {
+      if (!bot.entity) return
 
-    // ONLY LOOK ACTION (SAFE)
-    const t = bot.nearestEntity(e => e.type === 'player')
-    if (t) bot.lookAt(t.position.offset(0, 1.6, 0))
+      // SAFE ONLY (NO MOVEMENT CONTROL)
+      const player = bot.nearestEntity(e => e.type === 'player')
 
-  }, 2000)
+      if (player) {
+        bot.lookAt(player.position.offset(0, 1.6, 0))
+      }
+
+    } catch (err) {
+      console.log("AntiAFK error:", err.message)
+    }
+  }, 3000)
 }
