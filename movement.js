@@ -4,11 +4,13 @@ module.exports = function movement(bot) {
   console.log("🟢 movement loaded")
 
   setInterval(() => {
-    try {
+        try {
       if (!bot || !bot.entity) return
+      if (!bot.pathfinder) return
 
-      const player = bot.nearestEntity(e => e.type === 'player')
-      if (!player) return
+      const player = bot.nearestEntity(e =>
+        e.type === 'player'
+      )
 
       bot.lookAt(player.position.offset(0, 1.6, 0))
 
