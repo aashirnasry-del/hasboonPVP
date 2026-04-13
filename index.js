@@ -23,21 +23,26 @@ function startBot() {
   bot.loadPlugin(pathfinder)
 
   bot.on('spawn', () => {
-    console.log("🟢 Bot started")
+  console.log("🟢 Bot started")
 
-    const mcData = minecraftData(bot.version)
-    const moves = new Movements(bot, mcData)
-    bot.pathfinder.setMovements(moves)
+  const mcData = minecraftData(bot.version)
+  const moves = new Movements(bot, mcData)
+  bot.pathfinder.setMovements(moves)
 
-    setTimeout(() => {
-      bot.chat(`/login ${config.bot.password}`)
-    }, 3000)
+  setTimeout(() => {
+    bot.chat(`/login ${config.bot.password}`)
+  }, 3000)
 
-    // ONLY INIT MODULES (NO LOGIC HERE)
-    if (config.modules.movement) movement(bot)
-    if (config.modules.combat) combat(bot)
-    if (config.modules.antiAfk) antiAfk(bot)
-    leaveRejoin(bot, startBot)
+  // 👉 ADD THIS LINE HERE
+  auth(bot, config)
+
+  // other modules
+  if (config.modules.movement) movement(bot)
+  if (config.modules.combat) combat(bot)
+  if (config.modules.antiAfk) antiAfk(bot)
+
+  leaveRejoin(bot, startBot)
+})
   })
 
   bot.on('end', () => {
