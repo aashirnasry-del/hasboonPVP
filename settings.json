@@ -1,0 +1,16 @@
+{
+  "server": {
+    "ip": "PVPpracticeO.aternos.me",
+    "port": 60322,
+    "version": false
+  },
+  "bot": {
+    "username": "CoreBot",
+    "password": "676767"
+  },
+  "modules": {
+    "movement": true,
+    "combat": true,
+    "antiAfk": true
+  }
+}
