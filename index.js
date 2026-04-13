@@ -25,7 +25,7 @@ function startBot() {
     bot.loadPlugin(pathfinder)
 
     bot.once('spawn', () => {
-      console.log("🟢 Bot spawned")
+      console.log("Bot spawned")
 
       const mcData = minecraftData(bot.version)
       const moves = new Movements(bot, mcData)
@@ -35,7 +35,7 @@ function startBot() {
 
       setTimeout(() => {
         bot.chat(`/login ${config.bot.password}`)
-      }, 6000)
+      }, 5000)
 
       movement(bot)
       combat(bot)
@@ -45,28 +45,21 @@ function startBot() {
     })
 
     bot.on('end', () => {
-      console.log("🔄 disconnected")
-
       if (restarting) return
       restarting = true
 
       setTimeout(() => {
         restarting = false
         startBot()
-      }, 20000) // IMPORTANT: prevents throttle kick
+      }, 20000)
     })
 
-    bot.on('kicked', (reason) => {
-      console.log("❌ KICKED:", reason)
+    bot.on('error', err => {
+      console.log("Error:", err.message)
     })
 
-    bot.on('error', (err) => {
-      console.log("❌ ERROR:", err.message)
-    })
-
-  } catch (err) {
-    console.log("❌ CRASH:", err.message)
-
+  } catch (e) {
+    console.log("Crash:", e.message)
     setTimeout(startBot, 20000)
   }
 }
