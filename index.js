@@ -13,7 +13,6 @@ const leaveRejoin = require('./leaveRejoin')
 let bot
 
 function startBot() {
-
   try {
     bot = mineflayer.createBot({
       host: config.server.ip,
@@ -31,14 +30,12 @@ function startBot() {
       const moves = new Movements(bot, mcData)
       bot.pathfinder.setMovements(moves)
 
-      // AUTH
       auth(bot)
 
       setTimeout(() => {
         bot.chat(`/login ${config.bot.password}`)
       }, 3000)
 
-      // MODULES
       movement(bot)
       combat(bot)
       antiAfk(bot)
@@ -47,7 +44,7 @@ function startBot() {
     })
 
     bot.on('end', () => {
-      console.log("🔄 reconnecting...")
+      console.log("🔄 restarting...")
       setTimeout(startBot, 5000)
     })
 
@@ -56,7 +53,7 @@ function startBot() {
     })
 
   } catch (err) {
-    console.log("❌ Index crash:", err.message)
+    console.log("❌ Crash:", err.message)
   }
 }
 
