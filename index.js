@@ -3,16 +3,13 @@ const { pathfinder, Movements, goals } = require('mineflayer-pathfinder')
 const minecraftData = require('minecraft-data')
 const fs = require('fs')
 
-// =====================
-// SERVER CONFIG
-// =====================
 const HOST = 'PVPpracticeO.aternos.me'
 const PORT = 60322
-const USERNAME = 'AutoBot'
+const USERNAME = 'StableBot'
 const PASSWORD = '676767'
 
 // =====================
-// DATA SAVE
+// SAVE REGISTER STATE
 // =====================
 let data = { registered: false }
 
@@ -39,18 +36,18 @@ function startBot() {
 
   let mcData
   let movements
-  let reacting = false
 
   // =====================
   // SPAWN
   // =====================
   bot.on('spawn', () => {
-    console.log("🤖 Slobos-style AI online")
+    console.log("🟢 Bot online")
 
     mcData = minecraftData(bot.version)
     movements = new Movements(bot, mcData)
     bot.pathfinder.setMovements(movements)
 
+    // LOGIN (safe delay)
     setTimeout(() => {
       bot.chat(`/login ${PASSWORD}`)
     }, 3000)
@@ -59,28 +56,36 @@ function startBot() {
   })
 
   // =====================
-  // REGISTER / LOGIN
+  // REGISTER + LOGIN HANDLER
   // =====================
   bot.on('messagestr', (msg) => {
     const m = msg.toLowerCase()
 
+    // REGISTER ONLY ONCE
     if ((m.includes('register') || m.includes('reg')) && !data.registered) {
-      bot.chat(`/register ${PASSWORD} ${PASSWORD}`)
+      setTimeout(() => {
+        bot.chat(`/register ${PASSWORD} ${PASSWORD}`)
+      }, 1500)
+
       data.registered = true
       saveData()
+      console.log("📝 Registered once")
     }
 
+    // LOGIN (always safe)
     if (m.includes('login')) {
-      bot.chat(`/login ${PASSWORD}`)
+      setTimeout(() => {
+        bot.chat(`/login ${PASSWORD}`)
+      }, 1500)
     }
   })
 
   // =====================
-  // 🧠 MAIN AI BRAIN (SLOBOS STYLE)
+  // 🧠 STABLE AI BRAIN
   // =====================
   function brain(bot) {
     setInterval(() => {
-      if (!bot.entity || reacting) return
+      if (!bot.entity) return
 
       const player = bot.nearestEntity(e =>
         e.type === 'player' &&
@@ -88,24 +93,21 @@ function startBot() {
       )
 
       if (player) {
-        // follow smoothly (like PvP practice bots)
         bot.pathfinder.setGoal(new goals.GoalFollow(player, 2), true)
       } else {
-        // roam randomly like survival player
-        const x = bot.entity.position.x + (Math.random() * 16 - 8)
-        const z = bot.entity.position.z + (Math.random() * 16 - 8)
+        const x = bot.entity.position.x + (Math.random() * 10 - 5)
+        const z = bot.entity.position.z + (Math.random() * 10 - 5)
+
         bot.pathfinder.setGoal(new goals.GoalXZ(x, z))
       }
     }, 2500)
   }
 
   // =====================
-  // ⚡ REALISTIC DODGE SYSTEM
+  // ⚡ HIT DODGE (SAFE)
   // =====================
   bot.on('entityHurt', (entity) => {
-    if (entity !== bot.entity || reacting) return
-
-    reacting = true
+    if (entity !== bot.entity) return
 
     const attacker = bot.nearestEntity(e =>
       e.type === 'player' &&
@@ -113,38 +115,29 @@ function startBot() {
     )
 
     if (attacker) {
-      const dx = bot.entity.position.x - attacker.position.x
-      const dz = bot.entity.position.z - attacker.position.z
-
-      const x = bot.entity.position.x + (dx > 0 ? 6 : -6)
-      const z = bot.entity.position.z + (dz > 0 ? 6 : -6)
+      const x = bot.entity.position.x + (Math.random() * 6 - 3)
+      const z = bot.entity.position.z + (Math.random() * 6 - 3)
 
       bot.pathfinder.setGoal(new goals.GoalXZ(x, z))
     }
-
-    setTimeout(() => {
-      reacting = false
-    }, 1200)
   })
 
   // =====================
-  // 👀 LOOK SYSTEM (REALISTIC)
+  // LOOK SYSTEM
   // =====================
   setInterval(() => {
-    const target = bot.nearestEntity(e => e.type === 'player')
-    if (target) {
-      bot.lookAt(target.position.offset(0, 1.6, 0))
-    }
-  }, 1000)
+    const t = bot.nearestEntity(e => e.type === 'player')
+    if (t) bot.lookAt(t.position.offset(0, 1.6, 0))
+  }, 1200)
 
   // =====================
-  // ERROR HANDLING
+  // ERRORS
   // =====================
   bot.on('kicked', console.log)
   bot.on('error', console.log)
 
   bot.on('end', () => {
-    console.log("🔄 Reconnecting...")
+    console.log("🔄 Restarting...")
     setTimeout(startBot, 5000)
   })
 }
